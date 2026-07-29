@@ -321,7 +321,7 @@ def generate_pdf(
 
     elements.append(
         Paragraph(
-            "<b>Prepared By:</b> Kunal ",
+            "<b>Prepared By:</b> KunaL ",
             normal_style
         )
     )
@@ -330,7 +330,7 @@ def generate_pdf(
 
     elements.append(
         Paragraph(
-            "<b>Project:</b> Kerala Medical College Predictor",
+            "<b>Project:</b> KL Predictor",
             normal_style
         )
     )
