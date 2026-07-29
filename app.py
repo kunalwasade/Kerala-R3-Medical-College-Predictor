@@ -11,14 +11,78 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🎓 Kerala Medical College Predictor")
-st.markdown("Predict Kerala Medical Colleges based on the previous year's allotment data.")
+# ---------------------------------
+# Custom CSS
+# ---------------------------------
+st.markdown("""
+<style>
+
+.main {
+    padding-top: 1rem;
+}
+
+.title{
+    text-align:center;
+    font-size:clamp(30px,5vw,48px);
+    font-weight:700;
+    color:#0E4D92;
+}
+
+.subtitle{
+    text-align:center;
+    font-size:clamp(16px,2vw,22px);
+    color:#666666;
+    margin-bottom:25px;
+}
+
+div.stButton > button{
+    background:#0E4D92;
+    color:white;
+    font-size:18px;
+    font-weight:bold;
+    border-radius:10px;
+    height:55px;
+    border:none;
+}
+
+div.stButton > button:hover{
+    background:#1565C0;
+    color:white;
+}
+
+[data-testid="stMetric"]{
+    border:1px solid #E5E5E5;
+    border-radius:12px;
+    padding:12px;
+    background:#FAFAFA;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------------
+# Title
+# ---------------------------------
+
+st.markdown("""
+<h1 class="title">
+🎓 Kerala Medical College Predictor
+</h1>
+
+<p class="subtitle">
+Predict Kerala Medical Colleges using the previous year's allotment data
+</p>
+""", unsafe_allow_html=True)
+
+st.divider()
 
 # ---------------------------------
 # Load Dataset
 # ---------------------------------
+
 @st.cache_data
 def load_data():
+
     df = pd.read_excel("KERALA R3 ALLOTT.xlsx")
 
     df.columns = (
@@ -29,42 +93,48 @@ def load_data():
 
     return df
 
+
 df = load_data()
 
 # ---------------------------------
-# Sidebar Inputs
+# Candidate Details
 # ---------------------------------
 
-st.sidebar.header("Enter Candidate Details")
+st.subheader("📝 Candidate Details")
 
-rank = st.sidebar.number_input(
-    "Enter Rank",
-    min_value=1,
-    step=1
-)
+with st.form("prediction_form"):
 
-course = st.sidebar.selectbox(
-    "Course",
-    sorted(df["Course"].dropna().unique())
-)
+    rank = st.number_input(
+        "🏆 Enter Rank",
+        min_value=1,
+        step=1
+    )
 
-college_type = st.sidebar.selectbox(
-    "College Type",
-    sorted(df["College Type"].dropna().unique())
-)
+    course = st.selectbox(
+        "📚 Course",
+        sorted(df["Course"].dropna().unique())
+    )
 
-candidate_category = st.sidebar.selectbox(
-    "Candidate Category",
-    sorted(df["Candidate Category"].dropna().unique())
-)
+    college_type = st.selectbox(
+        "🏥 College Type",
+        sorted(df["College Type"].dropna().unique())
+    )
 
-alloted_category = st.sidebar.selectbox(
-    "Alloted Category",
-    sorted(df["Alloted Category"].dropna().unique())
-)
+    candidate_category = st.selectbox(
+        "👤 Candidate Category",
+        sorted(df["Candidate Category"].dropna().unique())
+    )
 
-predict = st.sidebar.button("🔍 Predict Colleges")
+    alloted_category = st.selectbox(
+        "🏷️ Alloted Category",
+        sorted(df["Alloted Category"].dropna().unique())
+    )
 
+    predict = st.form_submit_button(
+        "🔍 Predict Colleges"
+    )
+
+st.divider()
 # ---------------------------------
 # Prediction
 # ---------------------------------
@@ -146,59 +216,77 @@ if predict:
         ]
 
         # ---------------------------------
-        # Summary
+        # Success Message
         # ---------------------------------
 
-        st.success("Prediction Completed Successfully")
+        st.success("✅ Prediction Completed Successfully")
+        st.success(f"🏫 Found {len(result)} matching colleges.")
+
+        # ---------------------------------
+        # Summary Cards
+        # ---------------------------------
 
         col1, col2 = st.columns(2)
 
         with col1:
 
-            st.metric(
-                "Your Rank",
-                int(rank)
-            )
-
-            st.metric(
-                "Course",
-                course
-            )
-
-            st.metric(
-                "College Type",
-                college_type
-            )
+            st.metric("Your Rank", int(rank))
+            st.metric("Course", course)
+            st.metric("College Type", college_type)
 
         with col2:
 
-            st.metric(
-                "Candidate Category",
-                candidate_category
-            )
+            st.metric("Candidate Category", candidate_category)
+            st.metric("Alloted Category", alloted_category)
+            st.metric("Previous Year Cutoff", best_match_rank)
 
-            st.metric(
-                "Alloted Category",
-                alloted_category
-            )
+        # ---------------------------------
+        # Best Match College
+        # ---------------------------------
 
-            st.metric(
-                "Previous Year Cutoff",
-                best_match_rank
-            )
+        st.markdown(f"""
+### 🏥 Best Match College
 
-        st.info(f"🏥 **Best Match College:** {best_match_college}")
+**{best_match_college}**
 
-        st.subheader("Recommended Colleges")
+📌 Previous Year Cutoff Rank: **{best_match_rank}**
+""")
+
+        st.divider()
+
+        # ---------------------------------
+        # Search College
+        # ---------------------------------
+
+        search = st.text_input(
+            "🔍 Search College",
+            placeholder="Type college name..."
+        )
+
+        if search:
+
+            result = result[
+                result["College Name"].str.contains(
+                    search,
+                    case=False,
+                    na=False
+                )
+            ]
+
+        st.subheader(f"Recommended Colleges ({len(result)})")
 
         st.dataframe(
             result,
             use_container_width=True,
-            hide_index=True
+            hide_index=True,
+            height=500
         )
-        # -----------------------------
+        st.divider()
+
+        # ---------------------------------
         # Generate PDF
-        # -----------------------------
+        # ---------------------------------
+
         pdf = generate_pdf(
             result=result,
             rank=rank,
@@ -210,13 +298,18 @@ if predict:
             best_match_rank=best_match_rank
         )
 
-        # -----------------------------
-        # Download Button
-        # -----------------------------
+        # ---------------------------------
+        # Download Report
+        # ---------------------------------
+
         st.download_button(
             label="📄 Download PDF Report",
             data=pdf,
             file_name=f"Kerala_College_Prediction_{int(rank)}.pdf",
             mime="application/pdf",
             use_container_width=True
+        )
+
+        st.caption(
+            "📌 This prediction is based on the previous year's Kerala Medical College allotment data."
         )
