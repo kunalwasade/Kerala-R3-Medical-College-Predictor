@@ -11,9 +11,113 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
-    Image
 )
 
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase.pdfmetrics import stringWidth
+
+def draw_header(canvas, doc):
+    canvas.saveState()
+    canvas.setTitle("Kerala Medical College Prediction Report")
+    canvas.setAuthor("Pulse Point")
+    canvas.setSubject("Medical College Prediction")
+    canvas.setCreator("Pulse Point")
+# ==================================================
+# Watermark Logo
+# ==================================================
+
+    logo = ImageReader("logo.jpg")
+    canvas.setFillAlpha(0.15)   # Watermark transparency
+
+    page_width, page_height = doc.pagesize
+
+    logo_width = 250
+    logo_height = 250
+
+    x = (page_width - logo_width) / 2
+    y = (page_height - logo_height) / 2
+
+    canvas.drawImage(
+      logo,
+      x,
+      y,
+      width=logo_width,
+      height=logo_height,
+      preserveAspectRatio=True,
+      mask='auto'
+)
+
+# Restore transparency before drawing header text
+    canvas.setFillAlpha(1)
+
+    
+    blue = colors.HexColor("#0F4C81")
+
+    # Title
+    canvas.setFont("Helvetica-Bold", 26)
+    title = "PULSE POINT"
+    canvas.setFillColor(blue)
+    canvas.drawCentredString(page_width / 2, 800, title)
+
+    # Subtitle
+    canvas.setFont("Helvetica", 13)
+    canvas.setFillColor(colors.HexColor("#555555"))
+    canvas.drawCentredString(
+        page_width / 2,
+        780,
+        "Your Medical Admission Companion"
+    )
+
+    # Report Title
+    canvas.setFont("Helvetica-Bold", 17)
+    canvas.setFillColor(blue)
+    canvas.drawCentredString(
+        page_width / 2,
+        755,
+        "Kerala Medical College Prediction Report"
+    )
+
+    # Horizontal line
+    canvas.setStrokeColor(blue)
+    canvas.setLineWidth(2)
+    canvas.line(40, 740, page_width - 40, 740)
+
+    # ==================================================
+    # Footer
+    # ==================================================
+    footer_y = 18
+
+    canvas.setStrokeColor(colors.HexColor("#D0D0D0"))
+    canvas.setLineWidth(0.5)
+    canvas.line(40, footer_y + 15, page_width - 40, footer_y + 15)
+
+    canvas.setFont("Helvetica", 9)
+    canvas.setFillColor(colors.HexColor("#666666"))
+
+    # Left side
+    canvas.drawString(
+      40,
+      footer_y,
+      "Email: pulsepointneet@gmail.com"
+)
+
+    # Center
+    canvas.drawCentredString(
+      page_width / 2,
+      footer_y,
+      "+91 7994424367"
+)
+
+    # Right side
+    canvas.drawRightString(
+      page_width - 40,
+      footer_y,
+      f"© 2026 Pulse Point | Page {canvas.getPageNumber()}"
+)
+    
+
+
+    canvas.restoreState()
 
 def generate_pdf(
     result,
@@ -33,7 +137,7 @@ def generate_pdf(
         pagesize=(8.27 * inch, 11.69 * inch),  # A4
         rightMargin=25,
         leftMargin=25,
-        topMargin=15,
+        topMargin=120,
         bottomMargin=25
     )
 
@@ -45,49 +149,60 @@ def generate_pdf(
         fontName="Helvetica-Bold",
         fontSize=22,
         alignment=TA_CENTER,
-        textColor=colors.white,
-        spaceAfter=10
+        textColor=colors.HexColor("#0F4C81"),
+        spaceAfter=5
     )
+
+    subtitle_style = ParagraphStyle(
+        "Subtitle",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=12,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor("#555555"),
+        spaceAfter=5
+    )
+    report_style = ParagraphStyle(
+    "ReportTitle",
+    parent=styles["Heading2"],
+    fontName="Helvetica-Bold",
+    fontSize=15,
+    alignment=TA_CENTER,
+    textColor=colors.HexColor("#0F4C81"),
+    spaceAfter=15
+)
 
     heading_style = ParagraphStyle(
-        "Heading",
-        parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
-        fontSize=14,
-        textColor=colors.HexColor("#0F4C81"),
-        spaceBefore=15,
-        spaceAfter=10
-    )
+    "Heading",
+    parent=styles["Heading2"],
+    fontName="Helvetica-Bold",
+    fontSize=14,
+    textColor=colors.HexColor("#0F4C81"),
+    spaceBefore=15,
+    spaceAfter=10
+)
 
     normal_style = ParagraphStyle(
-        "Normal",
-        parent=styles["BodyText"],
-        fontName="Helvetica",
-        fontSize=11,
-        leading=18,
-        alignment=TA_LEFT
-    )
+    "Normal",
+    parent=styles["BodyText"],
+    fontName="Helvetica",
+    fontSize=11,
+    leading=18,
+    alignment=TA_LEFT
+)
 
     elements = []
 
-    # ==================================================
-    # Logo
-    # ==================================================
-
-    logo = Image("logo.jpg")
-    logo.drawWidth = 200
-    logo.drawHeight = logo.imageHeight * 200 / logo.imageWidth
-    logo.hAlign = "CENTER"
-
-    elements.append(logo)
+   
+ 
     # ==================================================
     # Candidate Information
     # ==================================================
 
     elements.append(
         Paragraph(
-            "Candidate Information",
-            heading_style
+        "Candidate Information",
+        heading_style
         )
     )
 
@@ -97,187 +212,187 @@ def generate_pdf(
         ["College Type", college_type],
         ["Candidate Category", candidate_category],
         ["Allotted Category", alloted_category],
-    ]
+        ]
 
     candidate_table = Table(
-        candidate_data,
-        colWidths=[170, 330]
-    )
+            candidate_data,
+            colWidths=[170, 330]
+        )
 
     candidate_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#E8F1FB")),
-        ("BACKGROUND", (1, 0), (1, -1), colors.white),
+            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#E8F1FB")),
+            ("BACKGROUND", (1, 0), (1, -1), colors.white),
 
-        ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#0F4C81")),
+            ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#0F4C81")),
 
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
 
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
 
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-    ]))
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ]))
 
     elements.append(candidate_table)
     elements.append(Spacer(1, 20))
 
-    # ==================================================
-    # Best Match College
-    # ==================================================
+        # ==================================================
+        # Best Match College
+        # ==================================================
 
     elements.append(
-        Paragraph(
-            "Best Match College",
-            heading_style
+            Paragraph(
+                "Best Match College",
+                heading_style
+            )
         )
-    )
 
     best_match = Table(
-        [[
-            Paragraph(
-                f"""
-                <font size=15>
-                <b>{best_match_college}</b>
-                </font>
+            [[
+                Paragraph(
+                    f"""
+                    <font size=15>
+                    <b>{best_match_college}</b>
+                    </font>
 
-                <br/><br/>
+                    <br/><br/>
 
-                <b>Previous Year Closing Rank:</b> {best_match_rank}
-                """,
-                normal_style
-            )
-        ]],
-        colWidths=[500]
-    )
+                    <b>Previous Year Closing Rank:</b> {best_match_rank}
+                    """,
+                    normal_style
+                )
+            ]],
+            colWidths=[500]
+        )
 
     best_match.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFF8E6")),
-        ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#F4B400")),
-        ("TOPPADDING", (0, 0), (-1, -1), 15),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 15),
-        ("LEFTPADDING", (0, 0), (-1, -1), 15),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 15),
-    ]))
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFF8E6")),
+            ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#F4B400")),
+            ("TOPPADDING", (0, 0), (-1, -1), 15),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 15),
+            ("LEFTPADDING", (0, 0), (-1, -1), 15),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 15),
+        ]))
 
     elements.append(best_match)
     elements.append(Spacer(1, 20))
-    # ==================================================
-    # Prediction Summary
-    # ==================================================
+        # ==================================================
+        # Prediction Summary
+        # ==================================================
 
     high = (result["Chance"] == "🟢 High Chance").sum()
     borderline = (result["Chance"] == "🟡 Borderline").sum()
     tough = (result["Chance"] == "🔴 Tough Chance").sum()
 
     elements.append(
-        Paragraph(
-            "Prediction Summary",
-            heading_style
+            Paragraph(
+                "Prediction Summary",
+                heading_style
+            )
         )
-    )
 
     summary_data = [
-        ["Total Colleges", str(len(result))],
-        ["High Chance", str(high)],
-        ["Borderline", str(borderline)],
-        ["Tough Chance", str(tough)]
-    ]
+            ["Total Colleges", str(len(result))],
+            ["High Chance", str(high)],
+            ["Borderline", str(borderline)],
+            ["Tough Chance", str(tough)]
+        ]
 
     summary_table = Table(
-        summary_data,
-        colWidths=[220, 100]
-    )
+            summary_data,
+            colWidths=[220, 100]
+        )
 
     summary_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#D9EDF7")),
-        ("BACKGROUND", (1, 0), (1, -1), colors.white),
+            ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#D9EDF7")),
+            ("BACKGROUND", (1, 0), (1, -1), colors.white),
 
-        ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#0F4C81")),
+            ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#0F4C81")),
 
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
 
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
 
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-    ]))
+            ("TOPPADDING", (0, 0), (-1, -1), 8),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ]))
 
     elements.append(summary_table)
     elements.append(Spacer(1, 20))
         # ==================================================
-    # Recommended Colleges
-    # ==================================================
+        # Recommended Colleges
+        # ==================================================
 
     elements.append(
-        Paragraph(
-            "Recommended Colleges",
-            heading_style
+            Paragraph(
+                "Recommended Colleges",
+                heading_style
+            )
         )
-    )
 
     table_data = [
-        ["S.No", "College Name", "Closing Rank", "Chance"]
-    ]
+            ["S.No", "College Name", "Closing Rank", "Chance"]
+        ]
 
     for _, row in result.iterrows():
 
-        table_data.append([
-            str(row["S.No"]),
-            Paragraph(str(row["College Name"]), normal_style),
-            str(int(row["Closing Rank"])),  
-            row["Chance"]
-        ])
+            table_data.append([
+                str(row["S.No"]),
+                Paragraph(str(row["College Name"]), normal_style),
+                str(int(row["Closing Rank"])),  
+                row["Chance"]
+            ])
 
     college_table = Table(
-        table_data,
-        colWidths=[45, 285, 70, 100],
-        repeatRows=1
-    )
+            table_data,
+            colWidths=[45, 285, 70, 100],
+            repeatRows=1
+        )
 
     style = [
 
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F4C81")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F4C81")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
 
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 1), (-1, -1), 9),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 1), (-1, -1), 9),
 
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-    ]
-
-    for i in range(1, len(table_data)):
-
-        if i % 2 == 0:
-            style.append(
-                ("BACKGROUND", (0, i), (-1, i), colors.HexColor("#F7FBFF"))
-            )
-        else:
-            style.append(
-                ("BACKGROUND", (0, i), (-1, i), colors.white)
-            )
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ]
 
     for i in range(1, len(table_data)):
 
-        chance = table_data[i][3]
+            if i % 2 == 0:
+                style.append(
+                    ("BACKGROUND", (0, i), (-1, i), colors.HexColor("#F7FBFF"))
+                )
+            else:
+                style.append(
+                    ("BACKGROUND", (0, i), (-1, i), colors.white)
+                )
 
-        if "High" in chance:
-            style.append(("TEXTCOLOR", (3, i), (3, i), colors.green))
-            style.append(("FONTNAME", (3, i), (3, i), "Helvetica-Bold"))
+    for i in range(1, len(table_data)):
 
-        elif "Borderline" in chance:
-            style.append(("TEXTCOLOR", (3, i), (3, i), colors.orange))
-            style.append(("FONTNAME", (3, i), (3, i), "Helvetica-Bold"))
+            chance = table_data[i][3]
 
-        else:
-            style.append(("TEXTCOLOR", (3, i), (3, i), colors.red))
-            style.append(("FONTNAME", (3, i), (3, i), "Helvetica-Bold"))
+            if "High" in chance:
+                style.append(("TEXTCOLOR", (3, i), (3, i), colors.green))
+                style.append(("FONTNAME", (3, i), (3, i), "Helvetica-Bold"))
+
+            elif "Borderline" in chance:
+                style.append(("TEXTCOLOR", (3, i), (3, i), colors.orange))
+                style.append(("FONTNAME", (3, i), (3, i), "Helvetica-Bold"))
+
+            else:
+                style.append(("TEXTCOLOR", (3, i), (3, i), colors.red))
+                style.append(("FONTNAME", (3, i), (3, i), "Helvetica-Bold"))
 
     college_table.setStyle(TableStyle(style))
 
@@ -285,55 +400,58 @@ def generate_pdf(
 
     elements.append(Spacer(1, 20))
 
-    # ==================================================
-    # Footer
-    # ==================================================
+        # ==================================================
+        # Footer
+        # ==================================================
 
     elements.append(
-        Paragraph(
-            "<b>Prepared By:</b> KunaL",
-            normal_style
+            Paragraph(
+                "<b>Prepared By:</b> KunaL",
+                normal_style
+            )
         )
-    )
 
     elements.append(Spacer(1, 6))
 
     elements.append(
-        Paragraph(
-            "<b>Team:</b> Pulse Point",
-            normal_style
+            Paragraph(
+                "<b>Team:</b> Pulse Point",
+                normal_style
+            )
         )
-    )
 
     elements.append(Spacer(1, 12))
 
     elements.append(
-        Paragraph(
-            """
-            <font color="grey" size="9">
-            This report is generated using previous year's Kerala Medical College
-            counselling data. Predictions are for guidance purposes only and
-            should not be considered official admission results.
-            </font>
-            """,
-            styles["BodyText"]
+            Paragraph(
+                """
+                <font color="grey" size="9">
+                This report is generated using previous year's Kerala Medical College
+                counselling data. Predictions are for guidance purposes only and
+                should not be considered official admission results.
+                </font>
+                """,
+                styles["BodyText"]
+            )
         )
-    )
 
     elements.append(Spacer(1, 8))
 
     elements.append(
-        Paragraph(
-            "<font color='grey' size='9'><b>© 2026 Pulse Point | All Rights Reserved</b></font>",
-            styles["BodyText"]
+            Paragraph(
+                "<font color='grey' size='9'><b>© 2026 Pulse Point | All Rights Reserved</b></font>",
+                styles["BodyText"]
+            )
         )
-    )
 
-    # ==================================================
-    # Build PDF
-    # ==================================================
+        # ==================================================
+        # Build PDF
+        # ==================================================
 
-    doc.build(elements)
+    doc.build(
+         elements,
+         onFirstPage=draw_header,
+         onLaterPages=draw_header,)
 
     pdf = buffer.getvalue()
 
