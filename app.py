@@ -105,7 +105,7 @@ st.subheader("📝 Candidate Details")
 with st.form("prediction_form"):
 
     rank = st.number_input(
-        "🏆 Enter Rank",
+        "🏆 Kerala Rank",
         min_value=1,
         step=1
     )
@@ -214,6 +214,9 @@ if predict:
                 "Chance"
             ]
         ]
+        result = result.rename(columns={
+    "Rank": "Closing Rank"
+})
 
         # ---------------------------------
         # Success Message
@@ -238,7 +241,7 @@ if predict:
 
             st.metric("Candidate Category", candidate_category)
             st.metric("Alloted Category", alloted_category)
-            st.metric("Previous Year Cutoff", best_match_rank)
+            st.metric("Previous Year Closing Rank", best_match_rank)
 
         # ---------------------------------
         # Best Match College
@@ -249,7 +252,7 @@ if predict:
 
 **{best_match_college}**
 
-📌 Previous Year Cutoff Rank: **{best_match_rank}**
+📌 Previous Year Closing Rank: **{best_match_rank}**
 """)
 
         st.divider()
@@ -305,7 +308,7 @@ if predict:
         st.download_button(
             label="📄 Download PDF Report",
             data=pdf,
-            file_name=f"Kerala_College_Prediction_{int(rank)}.pdf",
+            file_name=f"Pulse_Point_Report_{int(rank)}.pdf",
             mime="application/pdf",
             use_container_width=True
         )

@@ -1,5 +1,4 @@
 from io import BytesIO
-from datetime import datetime
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -11,7 +10,8 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Table,
-    TableStyle
+    TableStyle,
+    Image
 )
 
 
@@ -33,7 +33,7 @@ def generate_pdf(
         pagesize=(8.27 * inch, 11.69 * inch),  # A4
         rightMargin=25,
         leftMargin=25,
-        topMargin=25,
+        topMargin=15,
         bottomMargin=25
     )
 
@@ -71,39 +71,15 @@ def generate_pdf(
     elements = []
 
     # ==================================================
-    # Header Banner
+    # Logo
     # ==================================================
 
-    header = Table(
-        [[
-            Paragraph(
-                "<b>KERALA MEDICAL COLLEGE PREDICTION REPORT</b>",
-                title_style
-            )
-        ]],
-        colWidths=[520]
-    )
+    logo = Image("logo.jpg")
+    logo.drawWidth = 200
+    logo.drawHeight = logo.imageHeight * 200 / logo.imageWidth
+    logo.hAlign = "CENTER"
 
-    header.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#0F4C81")),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 18),
-        ("TOPPADDING", (0, 0), (-1, -1), 18),
-        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-    ]))
-
-    elements.append(header)
-    elements.append(Spacer(1, 15))
-
-    generated = datetime.now().strftime("%d %B %Y %I:%M %p")
-
-    elements.append(
-        Paragraph(
-            f"<b>Generated On:</b> {generated}",
-            normal_style
-        )
-    )
-
-    elements.append(Spacer(1, 20))
+    elements.append(logo)
     # ==================================================
     # Candidate Information
     # ==================================================
@@ -116,7 +92,7 @@ def generate_pdf(
     )
 
     candidate_data = [
-        ["Rank", str(int(rank))],
+        ["Your Rank", str(int(rank))],
         ["Course", course],
         ["College Type", college_type],
         ["Candidate Category", candidate_category],
@@ -144,7 +120,6 @@ def generate_pdf(
     ]))
 
     elements.append(candidate_table)
-
     elements.append(Spacer(1, 20))
 
     # ==================================================
@@ -168,7 +143,7 @@ def generate_pdf(
 
                 <br/><br/>
 
-                <b>Previous Year Cutoff Rank:</b> {best_match_rank}
+                <b>Previous Year Closing Rank:</b> {best_match_rank}
                 """,
                 normal_style
             )
@@ -186,7 +161,6 @@ def generate_pdf(
     ]))
 
     elements.append(best_match)
-
     elements.append(Spacer(1, 20))
     # ==================================================
     # Prediction Summary
@@ -231,9 +205,8 @@ def generate_pdf(
     ]))
 
     elements.append(summary_table)
-
     elements.append(Spacer(1, 20))
-    # ==================================================
+        # ==================================================
     # Recommended Colleges
     # ==================================================
 
@@ -245,7 +218,7 @@ def generate_pdf(
     )
 
     table_data = [
-        ["S.No", "College Name", "Rank", "Chance"]
+        ["S.No", "College Name", "Closing Rank", "Chance"]
     ]
 
     for _, row in result.iterrows():
@@ -253,7 +226,7 @@ def generate_pdf(
         table_data.append([
             str(row["S.No"]),
             Paragraph(str(row["College Name"]), normal_style),
-            str(int(row["Rank"])),
+            str(int(row["Closing Rank"])),  
             row["Chance"]
         ])
 
@@ -265,14 +238,12 @@ def generate_pdf(
 
     style = [
 
-        # Header
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F4C81")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("ALIGN", (0, 0), (-1, -1), "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
 
-        # Body
         ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
         ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
         ("FONTSIZE", (0, 1), (-1, -1), 9),
@@ -281,7 +252,6 @@ def generate_pdf(
         ("TOPPADDING", (0, 0), (-1, -1), 8),
     ]
 
-    # Alternate row colours
     for i in range(1, len(table_data)):
 
         if i % 2 == 0:
@@ -293,7 +263,6 @@ def generate_pdf(
                 ("BACKGROUND", (0, i), (-1, i), colors.white)
             )
 
-    # Chance colours
     for i in range(1, len(table_data)):
 
         chance = table_data[i][3]
@@ -315,22 +284,23 @@ def generate_pdf(
     elements.append(college_table)
 
     elements.append(Spacer(1, 20))
+
     # ==================================================
     # Footer
     # ==================================================
 
     elements.append(
         Paragraph(
-            "<b>Prepared By:</b> KunaL ",
+            "<b>Prepared By:</b> KunaL",
             normal_style
         )
     )
 
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 6))
 
     elements.append(
         Paragraph(
-            "<b>Project:</b> KL Predictor",
+            "<b>Team:</b> Pulse Point",
             normal_style
         )
     )
@@ -340,23 +310,21 @@ def generate_pdf(
     elements.append(
         Paragraph(
             """
-            <font color="grey">
-            This report is generated using previous year's KEAM counselling
-            allotment data. It is intended only for educational and guidance
-            purposes and should not be considered an official counselling result.
-            Please verify all information with the official KEAM counselling
-            process before making admission decisions.
+            <font color="grey" size="9">
+            This report is generated using previous year's Kerala Medical College
+            counselling data. Predictions are for guidance purposes only and
+            should not be considered official admission results.
             </font>
             """,
             styles["BodyText"]
         )
     )
 
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, 8))
 
     elements.append(
         Paragraph(
-            f"<font color='grey'>Generated On: {generated}</font>",
+            "<font color='grey' size='9'><b>© 2026 Pulse Point | All Rights Reserved</b></font>",
             styles["BodyText"]
         )
     )
