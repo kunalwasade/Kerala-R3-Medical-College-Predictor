@@ -1,3 +1,4 @@
+from reportlab.pdfgen.canvas import Canvas
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -16,6 +17,66 @@ from reportlab.platypus import (
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase.pdfmetrics import stringWidth
 
+class WatermarkCanvas(Canvas):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_page_states = []
+
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        page_count = len(self._saved_page_states)
+
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+
+            # Draw watermark AFTER all page contents
+            self.draw_watermark()
+
+            # Draw page number
+            self.setFont("Helvetica", 9)
+            self.setFillColor(colors.HexColor("#666666"))
+            self.drawRightString(
+                self._pagesize[0] - 40,
+                18,
+                f"© 2026 Pulse Point | Page {self._pageNumber} of {page_count}"
+            )
+
+            Canvas.showPage(self)
+
+        Canvas.save(self)
+
+    def draw_watermark(self):
+
+        logo = ImageReader("logo.png")
+
+        self.saveState()
+
+        self.setFillAlpha(0.12)
+
+        page_width, page_height = self._pagesize
+
+        logo_width = 260
+        logo_height = 260
+
+        x = (page_width - logo_width) / 2
+        y = (page_height - logo_height) / 2
+
+        self.drawImage(
+            logo,
+            x,
+            y,
+            width=logo_width,
+            height=logo_height,
+            preserveAspectRatio=True,
+            mask="auto"
+        )
+
+        self.restoreState()
+
 def draw_header(canvas, doc):
     canvas.saveState()
     canvas.setTitle("Kerala Medical College Prediction Report")
@@ -25,30 +86,7 @@ def draw_header(canvas, doc):
 # ==================================================
 # Watermark Logo
 # ==================================================
-
-    logo = ImageReader("logo.jpg")
-    canvas.setFillAlpha(0.15)   # Watermark transparency
-
     page_width, page_height = doc.pagesize
-
-    logo_width = 250
-    logo_height = 250
-
-    x = (page_width - logo_width) / 2
-    y = (page_height - logo_height) / 2
-
-    canvas.drawImage(
-      logo,
-      x,
-      y,
-      width=logo_width,
-      height=logo_height,
-      preserveAspectRatio=True,
-      mask='auto'
-)
-
-# Restore transparency before drawing header text
-    canvas.setFillAlpha(1)
 
     
     blue = colors.HexColor("#0F4C81")
@@ -406,7 +444,7 @@ def generate_pdf(
 
     elements.append(
             Paragraph(
-                "<b>Prepared By:</b> KunaL",
+                "<b>Prepared By:</b> Kunal_Wasade",
                 normal_style
             )
         )
@@ -451,7 +489,9 @@ def generate_pdf(
     doc.build(
          elements,
          onFirstPage=draw_header,
-         onLaterPages=draw_header,)
+         onLaterPages=draw_header,
+         canvasmaker=WatermarkCanvas
+         )
 
     pdf = buffer.getvalue()
 
